@@ -9,18 +9,18 @@ import * as I from 'monocle-ts/lib/Iso'
 
 export const betweenNumber = Ord.between(Ord.ordNumber)
 
+export const isAscii = (code: number): boolean => Ord.lt(Ord.ordNumber)(code, 127)
+
+export const printAscii = (code: number): string => JSON.stringify(String.fromCharCode(code))
+
+export const printUnicode = (code: number): string =>
+  `"\\u${`00${code.toString(16).toUpperCase()}`.slice(-4)}"`
+
 export const toCharCode = (c: C.Char): number => c.charCodeAt(0)
 
 export const fromCharCode = (code: number): string =>
   // NaN represents the end of the file
-  Number.isNaN(code)
-    ? '<EOF>'
-    : // ASCII
-    Ord.lt(Ord.ordNumber)(code, 127)
-    ? // Trust JSON for ASCII
-      JSON.stringify(String.fromCharCode(code))
-    : // Otherwise return the escaped form
-      `"\\u${`00${code.toString(16).toUpperCase()}`.slice(-4)}"`
+  Number.isNaN(code) ? '<EOF>' : isAscii(code) ? printAscii(code) : printUnicode(code)
 
 const charToCodePoint: I.Iso<C.Char, number> = {
   get: toCharCode,
