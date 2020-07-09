@@ -1,4 +1,6 @@
 import * as E from 'fp-ts/lib/Either'
+import * as Eq from 'fp-ts/lib/Eq'
+import * as O from 'fp-ts/lib/Option'
 import * as Ord from 'fp-ts/lib/Ord'
 import { pipe } from 'fp-ts/lib/function'
 import * as C from 'parser-ts/lib/char'
@@ -6,8 +8,6 @@ import { run } from 'parser-ts/lib/code-frame'
 import * as P from 'parser-ts/lib/Parser'
 import * as S from 'parser-ts/lib/string'
 import * as I from 'monocle-ts/lib/Iso'
-
-export const betweenNumber = Ord.between(Ord.ordNumber)
 
 export const isAscii = (code: number): boolean => Ord.lt(Ord.ordNumber)(code, 127)
 
@@ -22,32 +22,61 @@ export const fromCharCode = (code: number): string =>
   // NaN represents the end of the file
   Number.isNaN(code) ? '<EOF>' : isAscii(code) ? printAscii(code) : printUnicode(code)
 
-const charToCodePoint: I.Iso<C.Char, number> = {
+export const charToCodePoint: I.Iso<C.Char, number> = {
   get: toCharCode,
   reverseGet: fromCharCode
 }
+
+export const eqCodePoint = pipe(Eq.eqNumber, Eq.contramap<number, C.Char>(charToCodePoint.get))
+
+export const betweenNumber = Ord.between(Ord.ordNumber)
+
+export const betweenCharacters = Ord.between(
+  pipe(Ord.ordNumber, Ord.contramap<number, C.Char>(charToCodePoint.get))
+)
+
+export const charAt = (i: number, s: string): O.Option<C.Char> =>
+  pipe(i, betweenNumber(0, s.length - 1)) ? O.some(s.charAt(i)) : O.none
 
 // -------------------------------------------------------------------------------------
 // parsers
 // -------------------------------------------------------------------------------------
 
 /**
- * Parses a character with the specified UTF-16 code unit.
+ * Parses a character with the specified Unicode value.
  */
-const charCode = (code: number): P.Parser<C.Char, string> =>
+const charCode = (c: C.Char): P.Parser<C.Char, string> =>
   P.expected(
-    P.sat((a) => a.charCodeAt(0) === code),
-    `"${String.fromCharCode(code)}"`
+    P.sat((a) => eqCodePoint.equals(a, c)),
+    `"${c}"`
   )
 
 /**
- * Parses a character with a UTF-16 code unit between the specified `start` and `end` values.
+ * Parses a character with a Unicode value between the specified `start` and `end` characters.
  */
-const charCodeBetween = (start: number, end: number, expected: string): P.Parser<C.Char, string> =>
+const charCodeBetween = (start: C.Char, end: C.Char): P.Parser<C.Char, string> =>
   P.expected(
-    P.sat((a) => pipe(a.charCodeAt(0), betweenNumber(start, end))),
-    `"${expected}"`
+    P.sat((a) => pipe(a, betweenCharacters(start, end))),
+    `"${start}-${end}"`
   )
+
+const charCodeString = (s: string): P.Parser<C.Char, string> => {
+  const f = (s2: string): P.Parser<C.Char, string> =>
+    pipe(
+      charAt(0, s2),
+      O.fold(
+        () => P.succeed(''),
+        (c) =>
+          pipe(
+            charCode(c),
+            P.chain(() => f(s2.slice(1))),
+            P.chain(() => P.succeed(s))
+          )
+      )
+    )
+
+  return P.expected(f(s), JSON.stringify(s))
+}
 
 /**
  * Parses a bang (`!`) character.
@@ -55,7 +84,7 @@ const charCodeBetween = (start: number, end: number, expected: string): P.Parser
  * @category parsers
  * @since 0.1.0
  */
-export const bang = charCode(33)
+export const bang = charCode('!')
 
 /**
  * Parses a hash (`#`) character.
@@ -63,7 +92,7 @@ export const bang = charCode(33)
  * @category parsers
  * @since 0.1.0
  */
-export const hash = charCode(35)
+export const hash = charCode('#')
 
 /**
  * Parses a dollar sign (`$`) character.
@@ -71,7 +100,7 @@ export const hash = charCode(35)
  * @category parsers
  * @since 0.1.0
  */
-export const dollar = charCode(36)
+export const dollar = charCode('$')
 
 /**
  * Parses an ampersand (`&`) character.
@@ -79,7 +108,7 @@ export const dollar = charCode(36)
  * @category parsers
  * @since 0.1.0
  */
-export const amp = charCode(38)
+export const amp = charCode('&')
 
 /**
  * Parses a left parenthesis (`(`) character.
@@ -87,7 +116,7 @@ export const amp = charCode(38)
  * @category parsers
  * @since 0.1.0
  */
-export const parenL = charCode(40)
+export const parenL = charCode('(')
 
 /**
  * Parses a right parenthesis (`)`) character.
@@ -95,7 +124,7 @@ export const parenL = charCode(40)
  * @category parsers
  * @since 0.1.0
  */
-export const parenR = charCode(41)
+export const parenR = charCode(')')
 
 /**
  * Parses a plus (`+`) character.
@@ -103,7 +132,7 @@ export const parenR = charCode(41)
  * @category parsers
  * @since 0.1.0
  */
-export const plus = charCode(43)
+export const plus = charCode('+')
 
 /**
  * Parses a minus (`-`) character.
@@ -111,7 +140,7 @@ export const plus = charCode(43)
  * @category parsers
  * @since 0.1.0
  */
-export const minus = charCode(45)
+export const minus = charCode('_')
 
 /**
  * Parses a spread (`.`) character.
@@ -119,31 +148,7 @@ export const minus = charCode(45)
  * @category parsers
  * @since 0.1.0
  */
-export const spread = charCode(46)
-
-/**
- * Parses the zero (`0`) character.
- *
- * @category parsers
- * @since 0.1.0
- */
-export const zero = charCode(48)
-
-/**
- * Parses a digit (`0-9`).
- *
- * @category parsers
- * @since 0.1.0
- */
-export const digit = charCodeBetween(48, 57, '0-9')
-
-/**
- * Parses a non-zero digit (`1-9`).
- *
- * @category parsers
- * @since 0.1.0
- */
-export const nonZeroDigit = charCodeBetween(49, 57, '1-9')
+export const spread = charCode('.')
 
 /**
  * Parses a colon (`:`) character.
@@ -151,7 +156,7 @@ export const nonZeroDigit = charCodeBetween(49, 57, '1-9')
  * @category parsers
  * @since 0.1.0
  */
-export const colon = charCode(58)
+export const colon = charCode(':')
 
 /**
  * Parses an equals sign (`=`) character.
@@ -159,7 +164,7 @@ export const colon = charCode(58)
  * @category parsers
  * @since 0.1.0
  */
-export const equals = charCode(61)
+export const equals = charCode('=')
 
 /**
  * Parses an at symbol (`@`) character.
@@ -167,7 +172,7 @@ export const equals = charCode(61)
  * @category parsers
  * @since 0.1.0
  */
-export const at = charCode(64)
+export const at = charCode('@')
 
 /**
  * Parses a left bracket (`[`) character.
@@ -175,7 +180,7 @@ export const at = charCode(64)
  * @category parsers
  * @since 0.1.0
  */
-export const bracketL = charCode(91)
+export const bracketL = charCode('[')
 
 /**
  * Parses a right bracket (`]`) character.
@@ -183,7 +188,7 @@ export const bracketL = charCode(91)
  * @category parsers
  * @since 0.1.0
  */
-export const bracketR = charCode(93)
+export const bracketR = charCode(']')
 
 /**
  * Parses an underscore (`_`) character.
@@ -191,7 +196,7 @@ export const bracketR = charCode(93)
  * @category parsers
  * @since 0.1.0
  */
-export const underscore = charCode(95)
+export const underscore = charCode('_')
 
 /**
  * Parses a left brace (`{`) character.
@@ -199,7 +204,7 @@ export const underscore = charCode(95)
  * @category parsers
  * @since 0.1.0
  */
-export const braceL = charCode(123)
+export const braceL = charCode('{')
 
 /**
  * Parses a right brace (`}`) character.
@@ -207,7 +212,7 @@ export const braceL = charCode(123)
  * @category parsers
  * @since 0.1.0
  */
-export const braceR = charCode(125)
+export const braceR = charCode('}')
 
 /**
  * Parses a left brace (`|`) character.
@@ -215,7 +220,31 @@ export const braceR = charCode(125)
  * @category parsers
  * @since 0.1.0
  */
-export const pipeC = charCode(124)
+export const pipeC = charCode('|')
+
+/**
+ * Parses the zero (`0`) character.
+ *
+ * @category parsers
+ * @since 0.1.0
+ */
+export const zero = charCode('0')
+
+/**
+ * Parses a digit (`0-9`).
+ *
+ * @category parsers
+ * @since 0.1.0
+ */
+export const digit = charCodeBetween('0', '9')
+
+/**
+ * Parses a non-zero digit (`1-9`).
+ *
+ * @category parsers
+ * @since 0.1.0
+ */
+export const nonZeroDigit = charCodeBetween('1', '9')
 
 /**
  * Parses an uppercase letter (`A-Z`).
@@ -223,7 +252,7 @@ export const pipeC = charCode(124)
  * @category parsers
  * @since 0.1.0
  */
-export const uppercaseLetter = charCodeBetween(65, 90, 'A-Z')
+export const uppercaseLetter = charCodeBetween('A', 'Z')
 
 /**
  * Parses a lowercase letter (`a-z`).
@@ -231,7 +260,7 @@ export const uppercaseLetter = charCodeBetween(65, 90, 'A-Z')
  * @category parsers
  * @since 0.1.0
  */
-export const lowercaseLetter = charCodeBetween(97, 122, 'a-z')
+export const lowercaseLetter = charCodeBetween('a', 'z')
 
 /**
  * Parses a sign (`+ -`) character.
@@ -309,8 +338,8 @@ export const intValue = integerPart
  * @since 0.1.0
  */
 export const exponentIndicator = pipe(
-  charCode(69), // E
-  P.alt(() => charCode(101))
+  charCode('e'), // E
+  P.alt(() => charCode('E'))
 )
 
 /**
@@ -350,12 +379,7 @@ export const floatValue = S.fold([
  * @category parsers
  * @since 0.1.0
  */
-export const literalTrue = S.fold([
-  charCode(116), // t
-  charCode(114), // r
-  charCode(117), // u
-  charCode(101) // e
-])
+export const literalTrue = charCodeString('true')
 
 /**
  * Parses the literal value `false`.
@@ -363,13 +387,7 @@ export const literalTrue = S.fold([
  * @category parsers
  * @since 0.1.0
  */
-export const literalFalse = S.fold([
-  charCode(102), // f
-  charCode(97), // a
-  charCode(108), // l
-  charCode(115), // s
-  charCode(101) // e
-])
+export const literalFalse = charCodeString('false')
 
 /**
  * Parses a boolean value.
@@ -382,9 +400,7 @@ export const booleanValue = pipe(
   P.alt(() => literalFalse)
 )
 
-pipe(run(booleanValue, 'hello world'), E.fold(console.log, console.log))
-
-console.log(pipe(charToCodePoint, I.reverse).get(127))
+pipe(run(booleanValue, 'false'), E.fold(console.log, console.log))
 
 // // -------------------------------------------------------------------------------------
 // // model
