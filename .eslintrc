@@ -18,7 +18,10 @@
     "plugin:jest/recommended"
   ],
   "rules": {
+    "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/no-explicit-any": "off",
     "import/prefer-default-export": "off",
+    "jest/expect-expect": "off",
     "no-nested-ternary": "off",
     "no-underscore-dangle": "off"
   }

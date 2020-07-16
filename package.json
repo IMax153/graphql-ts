@@ -7,12 +7,16 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "ts-node -O '{\"module\": \"commonjs\"}' src"
+    "dev": "ts-node -O '{\"module\": \"commonjs\"}' src",
+    "test": "jest",
+    "test:watch": "jest --watchAll"
   },
   "dependencies": {
     "fp-ts": "^2.6.7",
+    "fp-ts-contrib": "^0.1.17",
     "io-ts": "^2.2.7",
     "monocle-ts": "^2.3.1",
+    "newtype-ts": "^0.3.4",
     "parser-ts": "^0.6.5"
   },
   "devDependencies": {
