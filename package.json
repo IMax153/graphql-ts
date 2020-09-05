@@ -7,35 +7,36 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "ts-node -O '{\"module\": \"commonjs\"}' src",
+    "dev": "ts-node -O '{\"module\": \"commonjs\"}' src/index.ts",
     "test": "jest",
     "test:watch": "jest --watchAll"
   },
   "dependencies": {
-    "fp-ts": "^2.6.7",
-    "fp-ts-contrib": "^0.1.17",
-    "io-ts": "^2.2.7",
-    "monocle-ts": "^2.3.1",
+    "fp-ts": "^2.8.2",
+    "fp-ts-contrib": "^0.1.18",
+    "graphql": "^15.3.0",
+    "io-ts": "^2.2.10",
+    "monocle-ts": "^2.3.3",
     "newtype-ts": "^0.3.4",
-    "parser-ts": "^0.6.5"
+    "parser-ts": "^0.6.7"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.3",
-    "@types/node": "^14.0.14",
-    "@typescript-eslint/eslint-plugin": "^3.5.0",
-    "@typescript-eslint/parser": "^3.5.0",
-    "eslint": "^7.3.1",
-    "eslint-config-airbnb-typescript": "^8.0.2",
+    "@types/jest": "^26.0.13",
+    "@types/node": "^14.6.3",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
+    "eslint": "^7.8.1",
+    "eslint-config-airbnb-typescript": "^9.0.0",
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-import": "^2.22.0",
-    "eslint-plugin-jest": "^23.17.1",
+    "eslint-plugin-jest": "^23.20.0",
     "eslint-plugin-prettier": "^3.1.4",
     "husky": "^4.2.5",
-    "jest": "^26.1.0",
-    "lint-staged": "^10.2.11",
-    "prettier": "^2.0.5",
-    "ts-jest": "^26.1.1",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.6"
+    "jest": "^26.4.2",
+    "lint-staged": "^10.3.0",
+    "prettier": "^2.1.1",
+    "ts-jest": "^26.3.0",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.2"
   }
 }

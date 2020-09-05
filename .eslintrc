@@ -18,11 +18,15 @@
     "plugin:jest/recommended"
   ],
   "rules": {
+    "@typescript-eslint/naming-convention": "off",
     "@typescript-eslint/no-empty-interface": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-use-before-define": "off",
+    "import/no-cycle": "off",
     "import/prefer-default-export": "off",
     "jest/expect-expect": "off",
     "no-nested-ternary": "off",
+    "no-shadow": "off",
     "no-underscore-dangle": "off"
   }
 }

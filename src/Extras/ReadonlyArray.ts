@@ -1,4 +1,4 @@
-import { cons, empty, reduceRight } from 'fp-ts/lib/ReadonlyArray'
+import * as RA from 'fp-ts/lib/ReadonlyArray'
 import { Endomorphism, Predicate } from 'fp-ts/lib/function'
 
 /**
@@ -11,4 +11,4 @@ import { Endomorphism, Predicate } from 'fp-ts/lib/function'
  * @internal
  */
 export const dropRightWhile = <A>(p: Predicate<A>): Endomorphism<ReadonlyArray<A>> =>
-  reduceRight<A, ReadonlyArray<A>>(empty, (a, b) => (p(a) && b.length === 0 ? [] : cons(a, b)))
+  RA.reduceRight<A, ReadonlyArray<A>>(RA.empty, (a, b) => (p(a) && b.length === 0 ? [] : RA.cons(a, b)))

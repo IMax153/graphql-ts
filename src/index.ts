@@ -1,9 +1,27 @@
 // import * as E from 'fp-ts/lib/Either'
 // import { pipe } from 'fp-ts/lib/function'
+// import * as util from 'util'
+// import { parse } from 'graphql/language'
 // import { run } from 'parser-ts/lib/code-frame'
+// import { print } from 'graphql/language'
 
-import * as L from './Lexer'
+// import * as P from './Language/AST/Parser'
 
-// pipe(run(L.blockString, '"""unescaped \\n\\r\\b\\t\\f\\u1234"""'), E.fold(console.log, console.log))
+// console.log(
+//   util.inspect(
+//     parse(`\ufeff{
+//   foo
+// }`),
+//     { depth: null }
+//   )
+// )
 
-console.log(L.commonIndent(0)([' a', '  b', 'c   ']))
+// pipe(
+//   run(
+//     P.selectionSet,
+//     `{
+//   foo
+// }`
+//   ),
+//   E.fold(console.log, console.log)
+// )
